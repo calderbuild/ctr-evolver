@@ -1,0 +1,41 @@
+# Environment
+.env
+*.key
+*.pem
+
+# Credentials
+config/gsc_token.json
+config/gsc_credentials.json
+config/settings.yaml
+API.md
+
+# Data
+data/
+gsc_data/
+*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Checkpoints
+checkpoints/
+
+# Playwright
+.playwright-mcp/

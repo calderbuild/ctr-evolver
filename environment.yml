@@ -1,0 +1,14 @@
+name: cohort0
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+    - openai
+    - google-auth-oauthlib
+    - google-api-python-client
+    - pandas
+    - pyarrow
+    - python-dotenv
+    - click

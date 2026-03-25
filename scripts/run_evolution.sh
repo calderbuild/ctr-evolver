@@ -12,7 +12,9 @@ echo ""
 
 # Sync latest GSC data
 echo "Syncing GSC data..."
-python cli.py gsc sync --days 90
+if ! python cli.py gsc sync --days 90; then
+    echo "GSC sync failed, continuing with cached data."
+fi
 
 # Show status
 python cli.py gsc status

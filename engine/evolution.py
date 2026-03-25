@@ -100,7 +100,10 @@ class SEOEvolutionEngine:
 
             # 1. Sync latest data
             print("Syncing GSC data...")
-            gsc_client.sync(self.site_url)
+            try:
+                gsc_client.sync(self.site_url)
+            except Exception as e:
+                print(f"  Sync error: {e}")
             df = gsc_client.load_data()
 
             if df.empty:

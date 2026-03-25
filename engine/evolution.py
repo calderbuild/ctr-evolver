@@ -90,9 +90,10 @@ class SEOEvolutionEngine:
         checkpoint = self._load_checkpoint()
         start_step = (checkpoint["step_num"] + 1) if checkpoint else 1
 
-        print(f"Starting evolution from step {start_step} (max {max_steps})")
+        end_step = start_step + max_steps - 1
+        print(f"Starting evolution from step {start_step} (running {max_steps} steps)")
 
-        for step_num in range(start_step, max_steps + 1):
+        for step_num in range(start_step, end_step + 1):
             print(f"\n{'=' * 60}")
             print(f"Step {step_num}/{max_steps}")
             print(f"{'=' * 60}")
@@ -175,13 +176,17 @@ class SEOEvolutionEngine:
         start_step = (checkpoint["step_num"] + 1) if checkpoint else 1
         last_sync = 0
 
-        print(f"Continuous mode: starting from step {start_step}, max {max_steps}")
+        end_step = start_step + max_steps - 1
+
+        print(
+            f"Continuous mode: starting from step {start_step}, running {max_steps} steps"
+        )
         print(
             f"Sync interval: {SYNC_INTERVAL // 3600}h, Step interval: {STEP_INTERVAL // 60}min"
         )
 
         step_num = start_step
-        while step_num <= max_steps:
+        while step_num <= end_step:
             now = time.time()
 
             # Sync if stale

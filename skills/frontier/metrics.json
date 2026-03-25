@@ -1,0 +1,32 @@
+{
+  "curiosity_gap": {
+    "avg_ctr_lift": 0.0,
+    "win_rate": 0.0,
+    "coverage": 3
+  },
+  "number_hook": {
+    "avg_ctr_lift": 0.0,
+    "win_rate": 0.0,
+    "coverage": 3
+  },
+  "loss_aversion": {
+    "avg_ctr_lift": 0.0,
+    "win_rate": 0.0,
+    "coverage": 3
+  },
+  "social_proof_authority": {
+    "avg_ctr_lift": 0.0,
+    "win_rate": 0.0,
+    "coverage": 0
+  },
+  "social_proof_signal": {
+    "avg_ctr_lift": 0.0,
+    "win_rate": 0.0,
+    "coverage": 0
+  },
+  "high_volume_query_targeting": {
+    "avg_ctr_lift": 0.0,
+    "win_rate": 0.0,
+    "coverage": 0
+  }
+}

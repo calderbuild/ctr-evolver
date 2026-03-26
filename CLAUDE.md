@@ -58,7 +58,9 @@ python cli.py evolve backtest --days 30                        # 回测
 bash scripts/run_evolution.sh
 ```
 
-默认站点：`sc-domain:jasonrobert.me`（cli.py 中硬编码）。环境变量 `SITE_URL`、`MAX_STEPS`、`MIN_IMPRESSIONS`、`MODE` 可覆盖 `run_evolution.sh` 默认值。
+默认站点：`https://meetspot-irq2.onrender.com/`（cli.py 中硬编码）。环境变量 `SITE_URL`、`MAX_STEPS`、`MIN_IMPRESSIONS`、`MODE` 可覆盖 `run_evolution.sh` 默认值。
+
+`max_steps` 表示"本次要跑多少步"而非"绝对步数上限"。从 checkpoint 恢复时会从上次步数 +1 开始，再跑 max_steps 步。
 
 ## 架构
 
@@ -118,11 +120,16 @@ client = OpenAI(
 - `opportunity.get_baseline_ctr()` 只覆盖 position 1-15，超出范围 clamp 到 15
 - Continuous 模式下 pending intervention 要等 7 天才会被评估
 
-## Daytona 沙箱约束（Phase 2 部署时）
+## Daytona 沙箱部署
 
-- 需申请 2 vCPU / 4GB RAM / 5GB disk
+- Sandbox 名称：`ctr-evolver`（`daytona exec ctr-evolver -- <cmd>`）
+- Repo：https://github.com/calderbuild/ctr-evolver （public）
+- **googleapis.com 被 Daytona 网络阻断**，GSC sync 不可用。需本地同步数据后上传 `data/` 到 sandbox
+- OpenRouter API 正常可用
+- 代码更新流程：本地 commit + push → sandbox 内 `git pull`
+- `daytona exec` 不支持 stdin pipe 和 shell 引号，复杂操作用 gist 中转脚本执行
 - 沙箱自动停止后文件系统保留 — 进化循环有 checkpoint 机制
-- 避免 port 3000（Streamlit bug），用 8501
+- 恢复：`daytona start ctr-evolver` → `daytona exec ctr-evolver --cwd /home/daytona/ctr-evolver -- python3 cli.py evolve run ...`
 
 ## 数据流
 

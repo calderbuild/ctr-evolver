@@ -414,12 +414,19 @@ class SEOEvolutionEngine:
         if not pending:
             return []
 
-        # Only evaluate interventions that have generated content
-        evaluable = [
-            p
-            for p in pending
-            if p.get("generated_title") and p.get("generated_title") != "(parse error)"
-        ]
+        # Map field names and filter out parse errors
+        evaluable = []
+        for p in pending:
+            title = p.get("new_title", "")
+            if title and title != "(parse error)":
+                evaluable.append(
+                    {
+                        **p,
+                        "generated_title": title,
+                        "generated_description": p.get("new_desc", ""),
+                        "original_title": p.get("old_title", ""),
+                    }
+                )
         if not evaluable:
             return []
 

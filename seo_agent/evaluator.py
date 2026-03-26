@@ -54,7 +54,7 @@ def is_significant(
 
     # Handle edge cases
     if before_impressions < 30 or after_impressions < 30:
-        return False  # Not enough data
+        return False  # Directional only, not statistically significant
 
     try:
         z_stat, p_value = stats.proportions_ztest(count, nobs)
@@ -112,9 +112,12 @@ def evaluate_intervention(
     after_clicks = after["clicks"].sum()
     after_ctr = after_clicks / after_impressions if after_impressions > 0 else 0
 
-    # Check minimum impressions
-    if before_impressions < 10 or after_impressions < 10:
-        return {"status": "insufficient_data", "reason": "Not enough impressions"}
+    # Check minimum impressions (lowered for sparse-data sites)
+    if before_impressions < 3 or after_impressions < 3:
+        return {
+            "status": "insufficient_data",
+            "reason": "Not enough impressions (need 3+)",
+        }
 
     # Calculate lifts
     ctr_lift = after_ctr - before_ctr

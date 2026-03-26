@@ -1,4 +1,5 @@
 """Failure analysis and new strategy proposal."""
+
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -34,7 +35,11 @@ def analyze_failures(
     Returns:
         Analysis text describing failure patterns
     """
-    failures = [e for e in evaluations if e.get("status") in ("failure", "inconclusive")]
+    failures = [
+        e
+        for e in evaluations
+        if e.get("status") in ("failure", "inconclusive", "insufficient_data")
+    ]
 
     if not failures:
         return "No failures to analyze."
@@ -60,17 +65,19 @@ def analyze_failures(
     client = _get_client()
     response = client.chat.completions.create(
         model=DEFAULT_MODEL,
-        messages=[{
-            "role": "user",
-            "content": f"""Analyze these failed SEO title/description interventions and identify common patterns:
+        messages=[
+            {
+                "role": "user",
+                "content": f"""Analyze these failed SEO title/description interventions and identify common patterns:
 
 {failure_summary}
 
 {extra_context}
 
 What patterns do you see? What types of queries or strategies tend to fail? Be specific and concise.
-Respond in 3-5 bullet points."""
-        }],
+Respond in 3-5 bullet points.""",
+            }
+        ],
         temperature=0.3,
         max_tokens=500,
     )
@@ -96,22 +103,27 @@ def propose_strategy(
     Returns:
         dict with keys: name, description, rationale
     """
-    history_text = "\n".join(f"- {fb}" for fb in feedback_history[-5:]) if feedback_history else "None yet."
+    history_text = (
+        "\n".join(f"- {fb}" for fb in feedback_history[-5:])
+        if feedback_history
+        else "None yet."
+    )
 
     memory_section = f"\n## Evolution Memory\n{memory_text}\n" if memory_text else ""
 
     client = _get_client()
     response = client.chat.completions.create(
         model=model,
-        messages=[{
-            "role": "user",
-            "content": f"""You are an SEO strategy researcher. Based on the failure analysis below, propose ONE new title/description optimization strategy.
+        messages=[
+            {
+                "role": "user",
+                "content": f"""You are an SEO strategy researcher. Based on the failure analysis below, propose ONE new title/description optimization strategy.
 
 ## Failure Analysis
 {failure_analysis}
 
 ## Current Active Skills
-{', '.join(current_skills)}
+{", ".join(current_skills)}
 
 ## Past Feedback
 {history_text}
@@ -124,8 +136,9 @@ def propose_strategy(
 - BUILD ON patterns listed in "Promising Directions" and "Effective Patterns"
 
 Respond in JSON:
-{{"name": "snake_case_name", "description": "One sentence description", "rationale": "Why this addresses the failures"}}"""
-        }],
+{{"name": "snake_case_name", "description": "One sentence description", "rationale": "Why this addresses the failures"}}""",
+            }
+        ],
         temperature=0.8,
         max_tokens=300,
     )
@@ -160,7 +173,11 @@ def _parse_json(text: str) -> dict:
                 return json.loads(text[start:end])
             except json.JSONDecodeError:
                 pass
-        return {"name": "unknown", "description": text[:200], "rationale": "parse error"}
+        return {
+            "name": "unknown",
+            "description": text[:200],
+            "rationale": "parse error",
+        }
 
 
 def extract_memory_updates(evaluations: list[dict]) -> dict:
@@ -184,9 +201,10 @@ def extract_memory_updates(evaluations: list[dict]) -> dict:
     client = _get_client()
     response = client.chat.completions.create(
         model="anthropic/claude-haiku-4.5",
-        messages=[{
-            "role": "user",
-            "content": f"""Based on these SEO intervention evaluation results, extract learnings:
+        messages=[
+            {
+                "role": "user",
+                "content": f"""Based on these SEO intervention evaluation results, extract learnings:
 
 {summary}
 
@@ -197,8 +215,9 @@ Respond in JSON:
   "patterns": [{{"pattern": "reusable pattern", "source_skills": ["skill1"]}}]
 }}
 
-Only include entries with clear evidence. Empty lists are fine. Be concise."""
-        }],
+Only include entries with clear evidence. Empty lists are fine. Be concise.""",
+            }
+        ],
         temperature=0.2,
         max_tokens=500,
     )

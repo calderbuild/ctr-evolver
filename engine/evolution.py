@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 from seo_agent import evaluator, executor, gsc_client, intervention, opportunity
+from seo_agent import llm_evaluator
 from . import frontier, proposer, skill_generator
 from .memory import EvolutionMemory
 
@@ -291,14 +292,16 @@ class SEOEvolutionEngine:
     def step(self, new_measurements: pd.DataFrame) -> dict:
         """Run one evolution step: evaluate -> eliminate -> propose -> generate.
 
-        Args:
-            new_measurements: Latest GSC data (DataFrame)
-
-        Returns:
-            dict with step results
+        Uses dual evaluation: CTR-based (when data available) + LLM-as-Judge (always).
         """
-        # 1. Evaluate pending interventions
-        evaluations = self._evaluate_interventions(new_measurements)
+        # 1. Evaluate pending interventions (CTR-based)
+        ctr_evaluations = self._evaluate_interventions(new_measurements)
+
+        # 2. LLM-evaluate recent interventions for immediate signal
+        llm_evaluations = self._llm_evaluate_interventions()
+
+        # Merge: prefer CTR evaluations when available, fall back to LLM
+        evaluations = ctr_evaluations if ctr_evaluations else llm_evaluations
 
         if not evaluations:
             return {
@@ -360,7 +363,7 @@ class SEOEvolutionEngine:
         }
 
     def _evaluate_interventions(
-        self, new_data: pd.DataFrame, min_age_days: int = 7
+        self, new_data: pd.DataFrame, min_age_days: int = 1
     ) -> list[dict]:
         """Evaluate pending interventions that are old enough to have after-data."""
         pending = intervention.load_interventions(status="pending")
@@ -405,8 +408,25 @@ class SEOEvolutionEngine:
 
         return evaluations
 
+    def _llm_evaluate_interventions(self) -> list[dict]:
+        """Evaluate recent interventions using LLM-as-Judge for immediate signal."""
+        pending = intervention.load_interventions(status="pending")
+        if not pending:
+            return []
+
+        # Only evaluate interventions that have generated content
+        evaluable = [
+            p
+            for p in pending
+            if p.get("generated_title") and p.get("generated_title") != "(parse error)"
+        ]
+        if not evaluable:
+            return []
+
+        return llm_evaluator.evaluate_batch(evaluable)
+
     def _aggregate_skill_metrics(self, evaluations: list[dict]) -> dict:
-        """Aggregate metrics by skill."""
+        """Aggregate metrics by skill. Handles both CTR and LLM evaluations."""
         skill_evals = {}
         for e in evaluations:
             skill = e["skill_name"]
@@ -419,9 +439,15 @@ class SEOEvolutionEngine:
             successes = [e for e in evals if e.get("status") == "success"]
             total = len(evals)
 
-            avg_lift = (
-                sum(e.get("ctr_lift", 0) for e in evals) / total if total > 0 else 0
-            )
+            # Use ctr_lift when available, otherwise normalize llm_score to [-1, 1]
+            lifts = []
+            for e in evals:
+                if "ctr_lift" in e:
+                    lifts.append(e["ctr_lift"])
+                elif "llm_score" in e:
+                    lifts.append((e["llm_score"] - 5) / 5)  # 0-10 -> -1 to 1
+            avg_lift = sum(lifts) / len(lifts) if lifts else 0
+
             win_rate = len(successes) / total if total > 0 else 0
 
             metrics[skill] = {

@@ -1,4 +1,5 @@
 """Opportunity identification for SEO CTR optimization."""
+
 import pandas as pd
 
 
@@ -39,7 +40,9 @@ def get_baseline_ctr(position: float) -> float:
     return baseline_map[pos_int]
 
 
-def calculate_opportunity_score(impressions: int, actual_ctr: float, expected_ctr: float) -> float:
+def calculate_opportunity_score(
+    impressions: int, actual_ctr: float, expected_ctr: float
+) -> float:
     """Calculate opportunity score.
 
     Score = impressions * (expected_ctr - actual_ctr)
@@ -55,7 +58,7 @@ def identify_opportunities(
     min_impressions: int = 200,
     ctr_threshold: float = 0.8,
     position_range: tuple[int, int] = (4, 15),
-    top_n: int = 20
+    top_n: int = 20,
 ) -> list[dict]:
     """Identify top opportunities from GSC data.
 
@@ -73,53 +76,57 @@ def identify_opportunities(
         return []
 
     # Aggregate by (page, query) — sum impressions/clicks, avg position
-    agg = df.groupby(['page', 'query']).agg({
-        'impressions': 'sum',
-        'clicks': 'sum',
-        'position': 'mean'
-    }).reset_index()
+    agg = (
+        df.groupby(["page", "query"])
+        .agg({"impressions": "sum", "clicks": "sum", "position": "mean"})
+        .reset_index()
+    )
+
+    # Filter out garbage queries (operator queries, URLs-as-queries)
+    agg = agg[~agg["query"].str.startswith("site:")]
+    agg = agg[~agg["query"].str.contains(r"https?\s*[:：/]", regex=True)]
 
     # Calculate CTR
-    agg['ctr'] = agg['clicks'] / agg['impressions']
+    agg["ctr"] = agg["clicks"] / agg["impressions"]
 
     # Filter by position range
     min_pos, max_pos = position_range
-    agg = agg[(agg['position'] >= min_pos) & (agg['position'] <= max_pos)]
+    agg = agg[(agg["position"] >= min_pos) & (agg["position"] <= max_pos)]
 
     # Filter by min impressions
-    agg = agg[agg['impressions'] >= min_impressions]
+    agg = agg[agg["impressions"] >= min_impressions]
 
     # Calculate baseline CTR
-    agg['baseline_ctr'] = agg['position'].apply(get_baseline_ctr)
+    agg["baseline_ctr"] = agg["position"].apply(get_baseline_ctr)
 
     # Filter by CTR threshold
-    agg = agg[agg['ctr'] < agg['baseline_ctr'] * ctr_threshold]
+    agg = agg[agg["ctr"] < agg["baseline_ctr"] * ctr_threshold]
 
     # Calculate opportunity score
-    agg['opportunity_score'] = agg.apply(
+    agg["opportunity_score"] = agg.apply(
         lambda row: calculate_opportunity_score(
-            row['impressions'],
-            row['ctr'],
-            row['baseline_ctr']
+            row["impressions"], row["ctr"], row["baseline_ctr"]
         ),
-        axis=1
+        axis=1,
     )
 
     # Sort by opportunity score descending
-    agg = agg.sort_values('opportunity_score', ascending=False)
+    agg = agg.sort_values("opportunity_score", ascending=False)
 
     # Return top N as list of dicts
     opportunities = []
     for _, row in agg.head(top_n).iterrows():
-        opportunities.append({
-            'page': row['page'],
-            'query': row['query'],
-            'position': row['position'],
-            'impressions': row['impressions'],
-            'clicks': row['clicks'],
-            'ctr': row['ctr'],
-            'baseline_ctr': row['baseline_ctr'],
-            'opportunity_score': row['opportunity_score']
-        })
+        opportunities.append(
+            {
+                "page": row["page"],
+                "query": row["query"],
+                "position": row["position"],
+                "impressions": row["impressions"],
+                "clicks": row["clicks"],
+                "ctr": row["ctr"],
+                "baseline_ctr": row["baseline_ctr"],
+                "opportunity_score": row["opportunity_score"],
+            }
+        )
 
     return opportunities

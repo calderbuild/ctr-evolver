@@ -1,4 +1,5 @@
 """Pareto frontier management for skill selection."""
+
 import json
 from pathlib import Path
 
@@ -46,6 +47,9 @@ class ParetoFrontier:
             for s2 in skills:
                 if s1 == s2:
                     continue
+                # Don't eliminate untested skills (coverage=0)
+                if self.metrics[s1].get("coverage", 0) == 0:
+                    break
                 if self._dominates(self.metrics[s2], self.metrics[s1]):
                     dominated.add(s1)
                     break
@@ -58,8 +62,8 @@ class ParetoFrontier:
         if len(frontier) > self.k:
             scored = [(s, self._composite_score(self.metrics[s])) for s in frontier]
             scored.sort(key=lambda x: x[1], reverse=True)
-            frontier = [s for s, _ in scored[:self.k]]
-            eliminated = [s for s, _ in scored[self.k:]]
+            frontier = [s for s, _ in scored[: self.k]]
+            eliminated = [s for s, _ in scored[self.k :]]
 
         # Save active skills
         self._save_active(frontier)

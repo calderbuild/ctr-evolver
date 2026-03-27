@@ -122,7 +122,7 @@ class SEOEvolutionEngine:
                 break
 
             # 3. Generate interventions for top opportunities
-            active_skills = executor.list_active_skills()
+            active_skills = [s["skill_name"] for s in self.frontier.get_active()]
             if not active_skills:
                 active_skills = ["curiosity_gap"]
 
@@ -241,7 +241,7 @@ class SEOEvolutionEngine:
 
             # Generate new interventions if we have opportunities
             if opps:
-                active_skills = executor.list_active_skills()
+                active_skills = [s["skill_name"] for s in self.frontier.get_active()]
                 if not active_skills:
                     active_skills = ["curiosity_gap"]
 

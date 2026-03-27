@@ -56,8 +56,8 @@ def calculate_opportunity_score(
 def identify_opportunities(
     df: pd.DataFrame,
     min_impressions: int = 200,
-    ctr_threshold: float = 0.8,
-    position_range: tuple[int, int] = (4, 15),
+    ctr_threshold: float = 1.0,
+    position_range: tuple[int, int] = (1, 50),
     top_n: int = 20,
 ) -> list[dict]:
     """Identify top opportunities from GSC data.

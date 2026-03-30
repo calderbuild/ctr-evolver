@@ -381,7 +381,7 @@ Draft → PendingApproval → Approved → Active → Completed
   ]
 }
 ```
-
+ 
 原子写入（tmp + rename）。启动时检查 `status != completed` 则回滚到上次完成状态。
 
 ---

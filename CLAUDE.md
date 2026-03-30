@@ -56,6 +56,12 @@ python cli.py evolve backtest --days 30                        # 回测
 
 # 一键运行（加载 .env，默认 continuous 模式）
 bash scripts/run_evolution.sh
+
+# 沙箱后台守护进程（Daytona 专用，fork 后退出）
+python3 scripts/daemon_evolve.py [max_steps]
+
+# 导出技能+数据为 base64 tarball（sandbox 数据取回）
+python3 scripts/export_skills.py  # → export.b64
 ```
 
 默认站点：`https://meetspot-irq2.onrender.com/`（cli.py 中硬编码）。环境变量 `SITE_URL`、`MAX_STEPS`、`MIN_IMPRESSIONS`、`MODE` 可覆盖 `run_evolution.sh` 默认值。
@@ -72,6 +78,7 @@ bash scripts/run_evolution.sh
 - `opportunity.py`：按 (page, query) 聚合，用 position baseline CTR 曲线（硬编码 15 位）算 opportunity_score = impressions * ctr_gap。
 - `executor.py`：加载 `skills/{name}/v{N}/SKILL.md` 作为 prompt 模板，调 LLM 生成 title/desc。`list_active_skills()` 读 `skills/frontier/active_skills.json`。
 - `evaluator.py`：position-adjusted CTR 评估 + two-proportion z-test 显著性检验（n<30 直接判 not significant）。
+- `llm_evaluator.py`：LLM-as-Judge 代理评估。GSC 数据稀疏时用 Haiku 打分（0-10，五维度）代替真实 CTR 数据。`_score_to_status()` 将分数映射为 success/failure/inconclusive 供 frontier 消费。
 - `intervention.py`：append-only JSONL（`data/interventions.jsonl`）。更新 = 追加同 ID 新记录，读取取最后一条。`get_evaluation_summary()` 按技能聚合输出 markdown 表格。
 
 ### engine/ — 进化层
@@ -118,7 +125,9 @@ client = OpenAI(
 - 小站点 GSC 数据稀疏时 `min_impressions=200` 过高，CLI 默认用 5；`position_range` 放宽到 `(1, 50)`
 - `evaluator.evaluate_intervention()` 需 before/after 各 100+ impressions 才出结果，否则返回 `insufficient_data`
 - `opportunity.get_baseline_ctr()` 只覆盖 position 1-15，超出范围 clamp 到 15
-- Continuous 模式下 pending intervention 要等 7 天才会被评估
+- Continuous 模式下 pending intervention 要等 1 天才会被评估（原 7 天，已降低）
+- Pareto frontier 中 coverage=0 的新技能有免淘汰保护，直到被实际试用
+- 进化循环的技能列表必须从 `frontier.get_active()` 读取，不要用 `executor.list_active_skills()`（后者读静态 JSON，不反映 frontier 变化）
 
 ## Daytona 沙箱部署
 
@@ -127,9 +136,11 @@ client = OpenAI(
 - **googleapis.com 被 Daytona 网络阻断**，GSC sync 不可用。需本地同步数据后上传 `data/` 到 sandbox
 - OpenRouter API 正常可用
 - 代码更新流程：本地 commit + push → sandbox 内 `git pull`
-- `daytona exec` 不支持 stdin pipe 和 shell 引号，复杂操作用 gist 中转脚本执行
+- **`daytona exec` 会 strip 所有引号**（单引号、双引号），无法直接传含引号的 shell/python 命令。复杂操作用 repo 内 Python 脚本或 gist 中转
+- **`daytona exec` 的 nohup/setsid 不生效** -- exec 退出时子进程被杀。后台任务用 `python3 scripts/daemon_evolve.py [max_steps]`
+- macOS `tar` 打包会包含 `._` resource fork 文件，导致 Linux 端 parquet 读取失败。上传前 `COPYFILE_DISABLE=1 tar` 或 Linux 端 `find -name '._*' -delete`
 - 沙箱自动停止后文件系统保留 — 进化循环有 checkpoint 机制
-- 恢复：`daytona start ctr-evolver` → `daytona exec ctr-evolver --cwd /home/daytona/ctr-evolver -- python3 cli.py evolve run ...`
+- 恢复：`daytona start ctr-evolver` → `daytona exec ctr-evolver --cwd /home/daytona/ctr-evolver -- python3 scripts/daemon_evolve.py 15`
 
 ## 数据流
 
@@ -139,7 +150,7 @@ GSC API -> parquet (data/gsc/) -> DataFrame
   -> generate_title_desc() -> {title, description, reasoning}
   -> record_intervention() -> interventions.jsonl (status=pending)
 
-7 天后:
+7 天后（continuous 模式实际 1 天）:
   -> evaluate_intervention() -> {ctr_lift, position_adjusted_lift, is_significant}
   -> update_intervention() -> interventions.jsonl (status=evaluated)
   -> frontier.update() -> 淘汰弱技能 + 更新 active_skills.json

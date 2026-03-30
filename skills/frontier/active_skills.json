@@ -1,7 +1,13 @@
 {
   "active": [
     "curiosity_gap",
-    "number_hook",
-    "loss_aversion"
+    "intent_match_confirmation",
+    "high_volume_informational_targeting",
+    "high_volume_informational_query_targeting",
+    "branded_navigational_direct_value_confirmation",
+    "branded_direct_answer_confirmation",
+    "branded_social_proof_trust_signal",
+    "unknown",
+    "branded_navigational_destination_reinforcement"
   ]
 }

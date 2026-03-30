@@ -12,12 +12,12 @@ All code is written, validated end-to-end, and bug-fixed. Zero commits beyond th
 
 ## Acceptance Criteria
 
-- [ ] 2-3 clean commits covering all code changes
-- [ ] GitHub private repo with code pushed (no secrets)
-- [ ] Daytona workspace created from repo
-- [ ] GSC credentials injected into sandbox
-- [ ] `python cli.py evolve run --max-steps 5 --mode continuous` running in Daytona
-- [ ] Checkpoint verified after first sandbox step
+- [x] 2-3 clean commits covering all code changes
+- [x] GitHub public repo with code pushed (no secrets)
+- [x] Daytona workspace created from repo
+- [x] GSC credentials injected into sandbox
+- [x] `python cli.py evolve run --max-steps 5 --mode continuous` running in Daytona
+- [x] Checkpoint verified after first sandbox step
 
 ---
 

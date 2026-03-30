@@ -136,10 +136,10 @@ date: 2026-03-26
 ## Acceptance Criteria
 
 ### Line A（工程）
-- [ ] `llm_evaluator.py` 实现并通过语法检查
-- [ ] 进化循环能在无真实 CTR 数据时通过 LLM score 完成 evaluate → evolve
-- [ ] Pareto frontier 出现非零 metrics
-- [ ] 至少产生 1 个通过进化生成的新技能
+- [x] `llm_evaluator.py` 实现并通过语法检查
+- [x] 进化循环能在无真实 CTR 数据时通过 LLM score 完成 evaluate → evolve
+- [x] Pareto frontier 出现非零 metrics
+- [x] 至少产生 1 个通过进化生成的新技能
 - [ ] Sandbox 中重新运行 5+ 步并验证 checkpoint
 
 ### Line B（研究）

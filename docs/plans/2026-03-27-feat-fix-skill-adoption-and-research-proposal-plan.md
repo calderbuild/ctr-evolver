@@ -24,9 +24,9 @@ date: 2026-03-27
 
 ### 修复
 
-- [ ] `engine/evolution.py` 的 `_run_burst()` 中：intervention 生成时使用 `self.frontier.get_active()` 的技能名，而非 `executor.list_active_skills()`
-- [ ] 确认 `frontier.update()` 被调用后 `active_skills.json` 包含新技能
-- [ ] 如果所有技能 metrics 相近（Pareto 无法区分），改用 composite score 排序保留所有技能
+- [x] `engine/evolution.py` 的 `_run_burst()` 中：intervention 生成时使用 `self.frontier.get_active()` 的技能名，而非 `executor.list_active_skills()`
+- [x] 确认 `frontier.update()` 被调用后 `active_skills.json` 包含新技能
+- [x] 如果所有技能 metrics 相近（Pareto 无法区分），改用 composite score 排序保留所有技能
 
 ### 验证
 
@@ -42,8 +42,8 @@ date: 2026-03-27
 
 ### 修复
 
-- [ ] `opportunity.py`：放宽 `position_range` 默认值到 `(1, 50)`（CLI 已传但函数签名默认 `(4, 15)`）
-- [ ] `evolution.py`：放宽 `ctr_threshold` 到 1.0（不过滤 CTR 高于 baseline 的页面）
+- [x] `opportunity.py`：放宽 `position_range` 默认值到 `(1, 50)`（CLI 已传但函数签名默认 `(4, 15)`）
+- [x] `evolution.py`：放宽 `ctr_threshold` 到 1.0（不过滤 CTR 高于 baseline 的页面）
 - [ ] 验证修改后能找到 3+ 个 opportunity
 
 ---

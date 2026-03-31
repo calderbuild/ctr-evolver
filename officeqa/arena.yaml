@@ -1,0 +1,19 @@
+name: "ctr-evolver-qa"
+version: "0.4.0"
+competition: "grounded-reasoning"
+
+agent:
+  type: "harness"
+  harness_name: "opencode"
+  model: "openrouter/qwen/qwen3-coder"
+  prompt_template_path: "prompts/officeqa_prompt.j2"
+  skills_dir: "skills/"
+
+  env:
+    OPENROUTER_API_KEY: "${oc.env:OPENROUTER_API_KEY,''}"
+    LLM_TEMPERATURE: "0.1"
+    MAX_ITERATIONS: "30"
+
+environment:
+  memory: "4G"
+  timeout_per_task: 600

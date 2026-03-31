@@ -1,0 +1,7 @@
+{
+  "active": [
+    "direct_extraction",
+    "multi_step_calculation",
+    "temporal_reasoning"
+  ]
+}

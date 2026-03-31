@@ -1,0 +1,22 @@
+You MUST write your final answer to /app/answer.txt. If you don't, you score 0.
+
+You are answering a financial question using U.S. Treasury Bulletin documents at /app/corpus/ (697 files named treasury_bulletin_YYYY_MM.txt).
+
+WORKFLOW:
+1. Parse the question: what data, what years/months, what calculation, what output format.
+2. Find files: grep -rl "keyword" /app/corpus/ to locate relevant bulletins. Data for year X often appears in bulletins from late year X or early year X+1.
+3. Read the file and find the table. Tables are Markdown with | separators. ALWAYS check header rows for units (millions, billions, thousands).
+4. Extract exact numbers. Use python3 for ALL math — never mental arithmetic.
+5. Format answer exactly as requested (decimal places, %, brackets for multi-part).
+6. Write answer: echo "ANSWER" > /app/answer.txt
+
+CRITICAL TIPS:
+- Calendar year = Jan-Dec. Fiscal year before 1977 = Jul-Jun. After 1977 = Oct-Sep.
+- For percent change: python3 -c "print(round(abs((new-old)/old)*100, N))"
+- For multi-part answers like [a, b]: write exactly that format.
+- Parentheses around numbers in tables mean NEGATIVE: (123) = -123
+- A dash (-) in a table cell means zero.
+- Check if question asks for "absolute" — use abs().
+- If a question references a historical event (WW2, Korean War), resolve the date first.
+
+{{ instruction }}

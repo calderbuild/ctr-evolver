@@ -190,15 +190,15 @@ This saves iterations vs opening files one-by-one.
 ```bash
 echo "ANSWER_ONLY" > /app/answer.txt
 ```
-Write ONLY the numeric value or formatted answer. No text, no explanation, no units unless asked.
-
-## Answer Format Rules
-- "rounded to nearest hundredths" = 2 decimal places: 12.34
-- "as a percent value (12.34%)" = include %: 12.34%
-- Bracket lists: [val1, val2, val3] with comma+space separator
-- Multi-value with thousands: [374,443, 381,327] -- keep commas within numbers
-- Date answers: March 3, 1977
-- Integer/count: whole number, no decimals
+**OUTPUT RULES**:
+- Write ONLY the final numeric value. No text, no explanation, no units.
+- Do NOT write unit words ("million", "billion", "thousand") -- just the number.
+- Do NOT write "$" -- just the number.
+- Do NOT write stray numbers (dates, line numbers, page refs) -- ONLY the answer.
+- "in billions" → write "8.124" not "8.124 billion"
+- "as a percent" → write "12.34%" (include % only when asked)
+- Lists: [val1, val2, val3] with comma+space
+- Round ONLY at the final step
 
 ## Common Errors to Avoid
 - Wrong file: data for year X may be in year X+1 bulletins
@@ -209,3 +209,4 @@ Write ONLY the numeric value or formatted answer. No text, no explanation, no un
 - Wrong units: check table header (millions vs billions vs thousands)
 - Searching too narrowly: try synonym terms if first grep fails
 - Not checking adjacent months when data isn't in expected file
+- Including unit words in answer -- just write the number

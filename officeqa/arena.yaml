@@ -10,7 +10,7 @@ agent:
 
   config:
     reasoning_effort: "high"
-    max_iterations: 30
+    max_iterations: 50
 
   env:
     LLM_API_KEY: "${oc.env:OPENROUTER_API_KEY,''}"

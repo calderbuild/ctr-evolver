@@ -52,60 +52,75 @@ def euclidean_norm(*values, decimals=2):
 
 
 def annualized_volatility(*returns, decimals=2, periods_per_year=52):
-    """Annualized volatility from a series of returns.
+    """Annualized volatility from a series of log returns.
+
+    Uses realized variance estimator: RV = sum(r_i^2) * (periods/n)
+    Then vol = sqrt(RV). Works correctly even with 1-2 returns.
 
     If raw prices given, compute log returns first:
       log_return = ln(p2/p1)
-    Then: vol = std(returns) * sqrt(periods_per_year)
     """
     n = len(returns)
-    if n < 2:
+    if n == 0:
         return 0.0
-    mean_r = sum(returns) / n
-    variance = sum((r - mean_r) ** 2 for r in returns) / (n - 1)
-    vol = math.sqrt(variance) * math.sqrt(periods_per_year)
+    # Realized variance estimator (sum of squared returns)
+    realized_var = sum(r ** 2 for r in returns) / n
+    vol = math.sqrt(realized_var * periods_per_year)
     return round(vol * 100, decimals)  # as percentage
 
 
 def hp_filter(values, lam=100, decimals=2):
     """Hodrick-Prescott filter. Returns trend component.
 
-    Uses matrix method: minimize sum((y-t)^2) + lambda*sum((t[i+1]-2*t[i]+t[i-1])^2)
+    Solves: min sum((y-t)^2) + lambda*sum((t[i+1]-2*t[i]+t[i-1])^2)
+    Uses pentadiagonal direct solve (no numpy needed).
     """
     n = len(values)
     if n < 3:
-        return values
+        return [round(v, decimals) for v in values]
 
-    # Build penalty matrix K (second difference)
-    # Solve: (I + lambda * K'K) * trend = y
-    # Using iterative approach for simplicity (no numpy dependency)
-    trend = list(values)  # start with y as initial guess
+    # Build pentadiagonal system (I + lambda * K'K)
+    # Main diagonal
+    d = [0.0] * n
+    d[0] = 1.0 + lam
+    d[1] = 1.0 + 5.0 * lam
+    for i in range(2, n - 2):
+        d[i] = 1.0 + 6.0 * lam
+    d[n - 2] = 1.0 + 5.0 * lam
+    d[n - 1] = 1.0 + lam
 
-    for _ in range(100):  # iterate to convergence
-        new_trend = list(trend)
-        for i in range(n):
-            numerator = values[i]
-            denominator = 1.0
+    # Sub-diagonal (offset 1)
+    dl = [0.0] * n
+    dl[1] = -2.0 * lam
+    for i in range(2, n - 1):
+        dl[i] = -4.0 * lam
+    dl[n - 1] = -2.0 * lam
 
-            if i >= 2:
-                numerator += lam * (trend[i - 2] - 2 * trend[i - 1])
-                denominator += lam
-            if i >= 1 and i <= n - 2:
-                numerator += lam * (-2 * trend[i - 1] + -2 * trend[i + 1])
-                denominator += 4 * lam
-            if i <= n - 3:
-                numerator += lam * (trend[i + 2] - 2 * trend[i + 1])
-                denominator += lam
+    # Sub-sub-diagonal (offset 2)
+    dll = [0.0] * n
+    for i in range(2, n):
+        dll[i] = lam
 
-            # Simplified: direct solve for this element
-            if denominator > 0:
-                new_trend[i] = numerator / denominator
+    # Forward elimination (pentadiagonal)
+    y = list(values)
+    for i in range(1, n):
+        if d[i - 1] == 0:
+            continue
+        m = dl[i] / d[i - 1]
+        d[i] -= m * dl[i]  # simplified: upper band mirrors lower
+        y[i] -= m * y[i - 1]
+        dl[i] = 0
+        if i >= 2:
+            m2 = dll[i] / d[i - 2] if d[i - 2] != 0 else 0
+            d[i] -= m2 * dll[i]
+            y[i] -= m2 * y[i - 2]
+            dll[i] = 0
 
-        # Check convergence
-        diff = sum((new_trend[j] - trend[j]) ** 2 for j in range(n))
-        trend = new_trend
-        if diff < 1e-10:
-            break
+    # Back substitution
+    trend = [0.0] * n
+    trend[n - 1] = y[n - 1] / d[n - 1] if d[n - 1] != 0 else y[n - 1]
+    for i in range(n - 2, -1, -1):
+        trend[i] = y[i] / d[i] if d[i] != 0 else y[i]
 
     return [round(t, decimals) for t in trend]
 

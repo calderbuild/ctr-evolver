@@ -27,8 +27,7 @@ for i, line in enumerate(lines):
 
 ## Units
 - Check table headers for: "(In millions of dollars)", "(In billions)", "(In thousands)"
-- If header says "millions" and you read "1,234", the actual value is 1,234,000,000... NO!
-  The value IS 1,234 millions. Only convert if the question asks for a different unit.
+- If header says "millions" and you read "1,234", the actual value is 1,234 millions. Only convert if the question asks for a different unit.
 - Remove commas before parsing: "1,234" -> 1234
 
 ## Special Values

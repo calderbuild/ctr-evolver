@@ -2,11 +2,11 @@
 
 You MUST write your final answer to /app/answer.txt. If you don't write this file, you score 0.
 
-Be efficient. Do not over-explain. Focus on finding data and computing the answer.
+IMPORTANT: Be extremely concise. Do NOT explain reasoning. Do NOT repeat the question. Do NOT narrate what you are doing. Output ONLY commands and their results. Every extra token wastes time and money.
 
-## Step 0: Setup Formula Library
+## Step 0: Setup
 
-BEFORE doing anything else, create the formula library:
+Run this FIRST, before anything else:
 ```bash
 cat > /tmp/formulas.py << 'PYEOF'
 import math, sys
@@ -41,7 +41,7 @@ def annualized_volatility(*returns, decimals=2, periods_per_year=52):
 def hp_filter(values, lam=100, decimals=2):
     n = len(values)
     if n < 3: return [round(v, decimals) for v in values]
-    d = [0.0]*n; d[0]=1+lam; d[1]=1+5*lam
+    d=[0.0]*n; d[0]=1+lam; d[1]=1+5*lam
     for i in range(2,n-2): d[i]=1+6*lam
     d[n-2]=1+5*lam; d[n-1]=1+lam
     dl=[0.0]*n; dl[1]=-2*lam
@@ -105,23 +105,36 @@ File index: /app/corpus/index.txt
 
 ## Workflow
 
-1. PARSE: What data? What years/months? What calculation? What output format?
+### 1. PARSE the question
+Extract these from the question text:
+- **Topic keywords**: what data (expenditures, debt, receipts, ESF, discount rate, etc.)
+- **Time range**: specific months/years, fiscal years, calendar years
+- **Calculation**: percent change, CAGR, mean, geometric mean, Theil index, etc.
+- **Output format**: decimal places, %, brackets, units (millions/billions)
+- **Hints**: if question mentions a specific bulletin date (e.g., "10/1960 Bulletin"), go directly to that file
 
-2. SEARCH: Find the right file(s).
-   - grep -rl "keyword" /app/corpus/ to find files containing a term
-   - Data for calendar year X often appears in bulletins from Jan-Mar of year X+1
-   - Fiscal year: before 1977 = Jul-Jun, after 1977 = Oct-Sep
+### 2. SEARCH for files
+- If question specifies a bulletin date: go directly to treasury_bulletin_YYYY_MM.txt
+- Otherwise: `grep -rl "keyword" /app/corpus/ | head -20`
+- Data for calendar year X often appears in bulletins from Jan-Mar of year X+1
+- Fiscal year: before 1977 = Jul-Jun, after 1977 = Oct-Sep
+- **If grep returns nothing**: try synonyms. "expenditure"="outlays"="spending", "receipts"="revenue"="collections", "public debt"="gross federal debt"="debt outstanding"
 
-3. EXTRACT: Use Python to parse tables reliably. NEVER eyeball columns.
+### 3. EXTRACT data with Python
+NEVER eyeball columns. ALWAYS use Python to parse:
 ```python
 text = open('/app/corpus/treasury_bulletin_YYYY_MM.txt').read()
 lines = text.split('\n')
+matches = []
 for i, line in enumerate(lines):
     if 'TARGET_PHRASE' in line.lower():
-        for j in range(max(0,i-5), min(len(lines), i+30)):
-            cols = [c.strip() for c in lines[j].split('|')]
-            print(f"L{j} [{len(cols)} cols]: {cols}")
-        break
+        matches.append(i)
+# Show context around ALL matches, not just the first
+for m in matches:
+    print(f"\n=== Match at line {m} ===")
+    for j in range(max(0,m-5), min(len(lines), m+30)):
+        cols = [c.strip() for c in lines[j].split('|')]
+        print(f"L{j} [{len(cols)} cols]: {cols}")
 ```
 Then use column INDEX to get the right value. Parse values:
 ```python
@@ -133,42 +146,66 @@ def parse_val(s):
     return -float(s) if neg else float(s)
 ```
 
-4. CALCULATE: Use python3 for ALL math. For complex formulas:
-   ```
-   python3 /tmp/formulas.py <function> <args>
-   ```
-   Available: percent_change, abs_percent_change, cagr, geometric_mean, theil_index, euclidean_norm, annualized_volatility, hp_filter, mean, log_return, abs_difference
+### 4. CALCULATE with Python
+Use python3 for ALL math. For complex formulas:
+```
+python3 /tmp/formulas.py <function> <args>
+```
+Available: percent_change, abs_percent_change, cagr, geometric_mean, theil_index, euclidean_norm, annualized_volatility, hp_filter, mean, log_return, abs_difference
 
-5. MULTI-FILE STRATEGY: When question spans 3+ years, write ONE batch script:
+For simple math, use: `python3 -c "print(round(EXPR, N))"`
+
+### 5. MULTI-FILE strategy
+When question spans multiple years/months, write ONE batch Python script:
 ```python
-import os
+import os, re
 corpus = '/app/corpus/'
 results = {}
-for year in range(START_YEAR, END_YEAR+1):
-    for mm in ['01','02','03','04','06','09','12']:
-        fname = f'treasury_bulletin_{year}_{mm}.txt'
+# Scan ALL months -- some data only appears in certain months
+for year in range(START_YEAR, END_YEAR+2):  # +2 to catch data published later
+    for mm in range(1, 13):
+        fname = f'treasury_bulletin_{year}_{mm:02d}.txt'
         path = os.path.join(corpus, fname)
-        if os.path.exists(path):
-            text = open(path).read()
-            for line in text.split('\n'):
-                if 'KEYWORD' in line.lower():
-                    cols = [c.strip() for c in line.split('|')]
-                    # extract from correct column
-                    break
+        if not os.path.exists(path):
+            continue
+        text = open(path).read()
+        for i, line in enumerate(text.split('\n')):
+            if 'KEYWORD' in line.lower():
+                cols = [c.strip() for c in line.split('|')]
+                # Extract value from correct column index
+                # results[key] = parse_val(cols[COL_IDX])
+                break
+print(results)
 ```
 This saves iterations vs opening files one-by-one.
 
-6. VERIFY before writing:
-   - Is magnitude reasonable? (federal spending = billions pre-2000)
-   - Does sign match? ("absolute" = positive)
-   - Correct format? (%, brackets, decimal places)
+### 6. VERIFY before writing
+- Is magnitude reasonable? (federal spending in billions pre-2000, trillions post-2010)
+- Does sign match? ("absolute" means use abs())
+- Correct unit? Check table header for "millions", "billions", "thousands"
+- Correct format? (decimal places, %, brackets)
+- If answer seems wildly off, re-check which column you extracted from
 
-7. WRITE: echo "ANSWER_ONLY" > /app/answer.txt
+### 7. WRITE the answer
+```bash
+echo "ANSWER_ONLY" > /app/answer.txt
+```
+Write ONLY the numeric value or formatted answer. No text, no explanation, no units unless asked.
 
-## Common Errors
-- Wrong file: check adjacent months/years
-- Wrong column: count | separators programmatically
-- Rounding too early: round only at final step
-- "Absolute" means use abs()
-- Forgetting to write /app/answer.txt
-- Check table headers for units (millions, billions, thousands)
+## Answer Format Rules
+- "rounded to nearest hundredths" = 2 decimal places: 12.34
+- "as a percent value (12.34%)" = include %: 12.34%
+- Bracket lists: [val1, val2, val3] with comma+space separator
+- Multi-value with thousands: [374,443, 381,327] -- keep commas within numbers
+- Date answers: March 3, 1977
+- Integer/count: whole number, no decimals
+
+## Common Errors to Avoid
+- Wrong file: data for year X may be in year X+1 bulletins
+- Wrong column: count | separators PROGRAMMATICALLY, never by eye
+- Rounding too early: round ONLY at final output step
+- "Absolute" means take abs() of the result
+- Forgetting to write /app/answer.txt -- always write it
+- Wrong units: check table header (millions vs billions vs thousands)
+- Searching too narrowly: try synonym terms if first grep fails
+- Not checking adjacent months when data isn't in expected file

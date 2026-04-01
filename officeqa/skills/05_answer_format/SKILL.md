@@ -21,8 +21,18 @@ echo "YOUR_ANSWER" > /app/answer.txt
 | "in billions" | Number in billions | 8.124 |
 | "in millions of dollars" | Number in millions | 1234.56 |
 | Multi-part with brackets | Bracketed, comma-separated | [8.124, 12.852] |
+| List of large numbers | Keep thousands commas | [374,443, 381,327, 401,845] |
 | Date | Written date | March 3, 1977 |
 | Count/integer | Whole number | 18 |
+| Country names | Comma-separated list | France, Netherlands, Switzerland |
+
+## List/Array Answers
+When the question asks for multiple values (e.g., "List the values from X to Y"):
+- Use square brackets: [val1, val2, val3]
+- Separate with comma + space
+- Keep thousands-separator commas within numbers: [374,443, 381,327]
+- Order matters: follow the order specified in the question (chronological, ascending, etc.)
+- If question says "from 1969 to 1980 inclusive", include ALL years in that range
 
 ## Common Mistakes
 - Writing explanation text in answer.txt (should be ONLY the value)
@@ -31,3 +41,5 @@ echo "YOUR_ANSWER" > /app/answer.txt
 - Forgetting "%" when question specifies percent format
 - Using wrong separator in multi-part answers (use comma + space)
 - Writing "approximately" or "about" -- give exact computed value
+- Dropping values from a list -- double-check count matches expected range
+- Wrong decimal precision: if question says "hundredths", use exactly 2 decimal places

@@ -4,15 +4,9 @@ You MUST write your final answer to /app/answer.txt. If you don't write this fil
 
 IMPORTANT: Be extremely concise. Do NOT explain reasoning. Do NOT repeat the question. Do NOT narrate what you are doing. Output ONLY commands and their results. Every extra token wastes time and money.
 
-## Step 0: Setup + Safety Net
+## Step 0: Setup
 
 Run this FIRST, before anything else:
-```bash
-echo "0" > /app/answer.txt
-```
-This ensures answer.txt always exists. You will overwrite it with the real answer later.
-
-Then create the formula library:
 ```bash
 cat > /tmp/formulas.py << 'PYEOF'
 import math, sys
@@ -119,13 +113,12 @@ Extract these from the question text:
 - **Output format**: decimal places, %, brackets, units (millions/billions)
 - **Hints**: if question mentions a specific bulletin date (e.g., "10/1960 Bulletin"), go directly to that file
 
-### 2. SEARCH for files (max 3 grep attempts, then switch to Python)
+### 2. SEARCH for files
 - If question specifies a bulletin date: go directly to treasury_bulletin_YYYY_MM.txt
 - Otherwise: `grep -rl "keyword" /app/corpus/ | head -20`
 - Data for calendar year X often appears in bulletins from Jan-Mar of year X+1
 - Fiscal year: before 1977 = Jul-Jun, after 1977 = Oct-Sep
-- **If grep returns nothing**: try ONE synonym search. If still nothing, IMMEDIATELY write a Python batch scan script (see Step 5). Do NOT keep trying more grep variations -- it wastes iterations.
-- **Iteration budget**: spend at most 3 iterations on searching. If you haven't found data by then, use Python to scan all files in the relevant year range.
+- **If grep returns nothing**: try synonyms. "expenditure"="outlays"="spending", "receipts"="revenue"="collections", "public debt"="gross federal debt"="debt outstanding"
 
 ### 3. EXTRACT data with Python
 NEVER eyeball columns. ALWAYS use Python to parse:
@@ -207,13 +200,6 @@ echo "ANSWER_ONLY" > /app/answer.txt
 - Lists: [val1, val2, val3] with comma+space
 - Round ONLY at the final step
 
-### 8. FALLBACK: If you cannot find the exact answer
-- Do NOT leave answer.txt empty or with just "0".
-- If you found partial data, use it to compute the best possible answer.
-- If you found no data at all, make a reasonable estimate based on the question context and typical Treasury Bulletin values.
-- A close guess (within 1% tolerance) scores full points. An empty answer always scores 0.
-- If you've used 35+ iterations without finding data, STOP searching and write your best estimate NOW.
-
 ## Common Errors to Avoid
 - Wrong file: data for year X may be in year X+1 bulletins
 - Wrong column: count | separators PROGRAMMATICALLY, never by eye
@@ -221,6 +207,6 @@ echo "ANSWER_ONLY" > /app/answer.txt
 - "Absolute" means take abs() of the result
 - Forgetting to write /app/answer.txt -- always write it
 - Wrong units: check table header (millions vs billions vs thousands)
-- Wasting iterations on repeated grep: switch to Python scan after 3 failed greps
+- Searching too narrowly: try synonym terms if first grep fails
 - Not checking adjacent months when data isn't in expected file
 - Including unit words in answer -- just write the number

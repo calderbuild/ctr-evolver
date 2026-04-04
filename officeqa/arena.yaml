@@ -1,19 +1,16 @@
 name: "ctr-evolver-qa"
-version: "0.9.0"
+version: "0.16.0"
 competition: "grounded-reasoning"
 
 agent:
   type: "harness"
-  harness_name: "openhands-sdk"
+  harness_name: "goose"
   model: "openrouter/qwen/qwen3-coder"
+  prompt_template_path: "prompts/officeqa_prompt.j2"
   skills_dir: "skills/"
 
-  config:
-    reasoning_effort: "high"
-    max_iterations: 50
-
   env:
-    LLM_API_KEY: "${oc.env:OPENROUTER_API_KEY,''}"
+    OPENROUTER_API_KEY: "${oc.env:OPENROUTER_API_KEY,''}"
 
 environment:
   memory: "8G"
